@@ -1,75 +1,48 @@
-Square = Struct.new(:x, :y, :depth, :parent, :children)
+Square = Struct.new(:x,:y,:path,:depth, :children)
 
-class MoveTree
-
-  attr_reader :squares, :root
-
-  def initialize(coord = [0,0], max_depth = 1)
-
-    @nodes = 0
-    @start = coord
-    @root = root_init
-    @max_depth = max_depth
-
-    create_tree(1, @root)
-
-  end
-
-  def root_init
-
-    @nodes += 1
-    Square.new(@start[0], @start[1], 0)
-
-  end
-
-  def create_tree(depth, parent_node)
-
-    return if depth > @max_depth
-    parent_node.children = valid_moves([parent_node.x, parent_node.y], depth, parent_node)
-    parent_node.children.each do |child|
-      create_tree(depth + 1, child)
-
-    end
-
-  end
-
-  def valid_moves(start, depth, parent_node)
-
-    moves = [[1,2], [1,-2], [-1,2], [-1,-2], [2,1], [2,-1], [-2,1], [-2,-1]]
-
-    valid_moveset = []
-
-    moves.each do |move|
-      temp = [start[0] + move[0], start[1] + move[1]]
-      if bounds(temp) && prev_move_check(parent_node, temp)
-        @nodes += 1
-        valid_moveset << Sqaure.new(temp[0], temp[1], dpeth, parent_node)
-      end
-    end
-
-    valid_moveset
-  end
-
-  def inspect
-
-    puts "Your tree has #{@nodes} nodes and a maximum depth of #{max_depth}"
-
-  end
-
-  def prev_move_check(parent_node, temp)
-    # ensures that parent node is not included in array of valid moves
-
-    temp_x, temp_y = temp[0], temp[1]
-    return true if parent_node == @root
-
-    (parent_node.parent.x != temp_x) && (parent_node.parent.y != temp_y)
-
-  end
-
-  def bounds(coord)
-
-    (0..7).include?(coord[0]) && (0..7).include?(coord[1])
-
-  end
-
+class MoveTrees
+   attr_accessor :tree, :depth, :max_depth, :nodes
+   
+   def initialize(position, depth)
+       @max_depth = depth
+       @depth = 0
+       @tree = Square.new(position[0], position[1], [position], @depth, nil)
+       @nodes = [1, 0]
+       @tree.children = makechildren(position, [position], @depth)
+   end
+   
+   def makechildren(position, path, depth)
+       dep = depth + 1
+       return nil if dep > @max_depth
+       array = []
+       child_array = []
+       [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]].each do |pair|
+            if square_verify([position[0]+pair[0], position[1]+pair[1]], path)
+               array << [position[0]+pair[0], position[1]+pair[1]] 
+            end
+       end
+       @nodes[0] += array.length
+       #print array
+       array.each do |pos|
+          son =  Square.new(pos[0], pos[1], path + [pos], dep, nil)
+          child_array << son
+       end
+       #print child_array
+       child_array.each do |child|
+           child.children = makechildren([child[0], child[1]], child.path, dep)
+       end
+       @nodes[1] = [dep + 1, nodes[1]].max
+       
+       return child_array
+   end
+   
+   def square_verify(position, path)
+      [1,2,3,4,5,6,7,8].include?(position[0]) && [1,2,3,4,5,6,7,8].include?(position[1]) && !path.include?(position)
+   end
+   
+   def inspect
+      puts @nodes[0].to_s + "  nodes"
+      puts @nodes[1].to_s + "  depth"
+   end
+    
 end
